@@ -1,37 +1,47 @@
-require 'formula'
-
 class Python3 < Formula
-  homepage 'https://www.python.org/'
-  url 'https://python.org/ftp/python/3.4.1/Python-3.4.1.tgz'
-  sha1 'e8c1bd575a6ccc2a75f79d9d094a6a29d3802f5d'
+  homepage "https://www.python.org/"
+  url "https://www.python.org/ftp/python/3.4.2/Python-3.4.2.tar.xz"
+  sha1 "0727d8a8498733baabe6f51632b9bab0cbaa9ada"
+  revision 1
 
   bottle do
-    sha1 "e86f7aede6e519a426e326f5020dc780ee39f05e" => :mavericks
-    sha1 "ad0bdc7fbf3f5079d134405fc83465634e07c40d" => :mountain_lion
-    sha1 "942f16fe68c47b267c958eca67f3754b412bd10d" => :lion
+    revision 4
+    sha1 "bafbd760dc7cdc3e0d782714e866006200f2f128" => :yosemite
+    sha1 "aeff86cffe18f6aea643e90e56032fb272c9612f" => :mavericks
+    sha1 "a27901327dad9d61f50be6e2dbde59116da682e2" => :mountain_lion
   end
 
-  VER='3.4'  # The <major>.<minor> is used so often.
+  VER="3.4"  # The <major>.<minor> is used so often.
 
-  head 'http://hg.python.org/cpython', :using => :hg, :branch => VER
+  head "https://hg.python.org/cpython", :using => :hg, :branch => VER
 
   option :universal
-  option 'quicktest', 'Run `make quicktest` after the build'
-  option 'with-brewed-tk', "Use Homebrew's Tk (has optional Cocoa and threads support)"
+  option "quicktest", "Run `make quicktest` after the build"
+  option "with-brewed-tk", "Use Homebrew's Tk (has optional Cocoa and threads support)"
 
-  depends_on 'pkg-config' => :build
-  depends_on 'readline' => :recommended
-  depends_on 'sqlite' => :recommended
-  depends_on 'gdbm' => :recommended
-  depends_on 'openssl'
-  depends_on 'xz' => :recommended  # for the lzma module added in 3.3
-  depends_on 'homebrew/dupes/tcl-tk' if build.with? 'brewed-tk'
-  depends_on :x11 if build.with? 'brewed-tk' and Tab.for_name('tcl-tk').used_options.include?('with-x11')
+  depends_on "pkg-config" => :build
+  depends_on "readline" => :recommended
+  depends_on "sqlite" => :recommended
+  depends_on "gdbm" => :recommended
+  depends_on "openssl"
+  depends_on "xz" => :recommended  # for the lzma module added in 3.3
+  depends_on "homebrew/dupes/tcl-tk" if build.with? "brewed-tk"
+  depends_on :x11 if build.with? "brewed-tk" and Tab.for_name("tcl-tk").with? "x11"
 
   skip_clean "bin/pip3", "bin/pip-#{VER}"
   skip_clean "bin/easy_install3", "bin/easy_install-#{VER}"
 
-  patch :DATA if build.with? 'brewed-tk'
+  resource "setuptools" do
+    url "https://pypi.python.org/packages/source/s/setuptools/setuptools-12.0.5.tar.gz"
+    sha1 "cd49661e090a397d77c690f7f2d06852b7086be9"
+  end
+
+  resource "pip" do
+    url "https://pypi.python.org/packages/source/p/pip/pip-6.0.7.tar.gz"
+    sha1 "d2539dcd3d938863c7f6d7197d2f53066c92cf23"
+  end
+
+  patch :DATA if build.with? "brewed-tk"
 
   def site_packages_cellar
     prefix/"Frameworks/Python.framework/Versions/#{VER}/lib/python#{VER}/site-packages"
@@ -43,7 +53,7 @@ class Python3 < Formula
   end
 
   fails_with :llvm do
-    build '2336'
+    build 2336
     cause <<-EOS.undent
       Could not find platform dependent libraries <exec_prefix>
       Consider setting $PYTHONHOME to <prefix>[:<exec_prefix>]
@@ -64,8 +74,8 @@ class Python3 < Formula
   def install
     # Unset these so that installing pip and setuptools puts them where we want
     # and not into some other Python the user has installed.
-    ENV['PYTHONHOME'] = nil
-    ENV['PYTHONPATH'] = nil
+    ENV["PYTHONHOME"] = nil
+    ENV["PYTHONPATH"] = nil
 
     args = %W[
       --prefix=#{prefix}
@@ -75,13 +85,9 @@ class Python3 < Formula
       --enable-framework=#{frameworks}
     ]
 
-    args << '--without-gcc' if ENV.compiler == :clang
+    args << "--without-gcc" if ENV.compiler == :clang
 
-    if superenv?
-      distutils_fix_superenv(args)
-    else
-      distutils_fix_stdenv
-    end
+    distutils_fix_superenv(args)
 
     if build.universal?
       ENV.universal_binary
@@ -89,7 +95,7 @@ class Python3 < Formula
     end
 
     # Allow sqlite3 module to load extensions: http://docs.python.org/library/sqlite3.html#f1
-    inreplace("setup.py", 'sqlite_defines.append(("SQLITE_OMIT_LOAD_EXTENSION", "1"))', 'pass') if build.with? 'sqlite'
+    inreplace("setup.py", 'sqlite_defines.append(("SQLITE_OMIT_LOAD_EXTENSION", "1"))', 'pass') if build.with? "sqlite"
 
     # Allow python modules to use ctypes.find_library to find homebrew's stuff
     # even if homebrew is not a /usr/local/lib. Try this with:
@@ -99,10 +105,10 @@ class Python3 < Formula
       f.gsub! 'DEFAULT_FRAMEWORK_FALLBACK = [', "DEFAULT_FRAMEWORK_FALLBACK = [ '#{HOMEBREW_PREFIX}/Frameworks',"
     end
 
-    if build.with? 'brewed-tk'
+    if build.with? "brewed-tk"
       tcl_tk = Formula["tcl-tk"].opt_prefix
-      ENV.append 'CPPFLAGS', "-I#{tcl_tk}/include"
-      ENV.append 'LDFLAGS', "-L#{tcl_tk}/lib"
+      ENV.append "CPPFLAGS", "-I#{tcl_tk}/include"
+      ENV.append "LDFLAGS", "-L#{tcl_tk}/lib"
     end
 
     system "./configure", *args
@@ -130,6 +136,10 @@ class Python3 < Formula
 
     # Remove the site-packages that Python created in its Cellar.
     site_packages_cellar.rmtree
+
+    %w[setuptools pip].each do |r|
+      (libexec/r).install resource(r)
+    end
   end
 
   def post_install
@@ -154,8 +164,20 @@ class Python3 < Formula
     rm_rf Dir["#{site_packages}/setuptools*"]
     rm_rf Dir["#{site_packages}/distribute*"]
 
-    # Install the bundled pip if it's newer than the installed version
-    system bin/"python3", "-m", "ensurepip", "--upgrade"
+    %w[setuptools pip].each do |pkg|
+      (libexec/pkg).cd do
+        system bin/"python3", "-s", "setup.py", "--no-user-cfg", "install",
+               "--force", "--verbose", "--install-scripts=#{bin}",
+               "--install-lib=#{site_packages}"
+      end
+    end
+
+    rm_rf [bin/"pip", bin/"easy_install"]
+
+    # post_install happens after link
+    %W[pip3 pip#{VER} easy_install-#{VER}].each do |e|
+      (HOMEBREW_PREFIX/"bin").install_symlink bin/e
+    end
 
     # And now we write the distutils.cfg
     cfg = prefix/"Frameworks/Python.framework/Versions/#{VER}/lib/python#{VER}/distutils/distutils.cfg"
@@ -177,9 +199,8 @@ class Python3 < Formula
       # The setup.py looks at "-isysroot" to get the sysroot (and not at --sysroot)
       cflags += " -isysroot #{MacOS.sdk_path}"
       ldflags += " -isysroot #{MacOS.sdk_path}"
-      # Same zlib.h-not-found-bug as in env :std (see below)
-      args << "CPPFLAGS=-I#{MacOS.sdk_path}/usr/include"
-      if build.without? 'brewed-tk'
+      args << "CPPFLAGS=-I#{MacOS.sdk_path}/usr/include" # find zlib
+      if build.without? "brewed-tk"
         cflags += " -I#{MacOS.sdk_path}/System/Library/Frameworks/Tk.framework/Versions/8.5/Headers"
       end
     end
@@ -191,37 +212,14 @@ class Python3 < Formula
     # superenv makes cc always find includes/libs!
     inreplace "setup.py",
               "do_readline = self.compiler.find_library_file(lib_dirs, 'readline')",
-              "do_readline = '#{HOMEBREW_PREFIX}/opt/readline/lib/libhistory.dylib'"
-  end
-
-  def distutils_fix_stdenv
-    # Python scans all "-I" dirs but not "-isysroot", so we add
-    # the needed includes with "-I" here to avoid this err:
-    #     building dbm using ndbm
-    #     error: /usr/include/zlib.h: No such file or directory
-    ENV.append 'CPPFLAGS', "-I#{MacOS.sdk_path}/usr/include" unless MacOS::CLT.installed?
-
-    # Don't use optimizations other than "-Os" here, because Python's distutils
-    # remembers (hint: `python3-config --cflags`) and reuses them for C
-    # extensions which can break software (such as scipy 0.11 fails when
-    # "-msse4" is present.)
-    ENV.minimal_optimization
-
-    # We need to enable warnings because the configure.in uses -Werror to detect
-    # "whether gcc supports ParseTuple" (https://github.com/Homebrew/homebrew/issues/12194)
-    ENV.enable_warnings
-    if ENV.compiler == :clang
-      # http://docs.python.org/devguide/setup.html#id8 suggests to disable some Warnings.
-      ENV.append_to_cflags '-Wno-unused-value'
-      ENV.append_to_cflags '-Wno-empty-body'
-    end
+              "do_readline = '#{Formula["readline"].opt_lib}/libhistory.dylib'"
   end
 
   def sitecustomize
     <<-EOF.undent
       # This file is created by Homebrew and is executed on each python startup.
       # Don't print from here, or else python command line scripts may fail!
-      # <https://github.com/Homebrew/homebrew/wiki/Homebrew-and-Python>
+      # <https://github.com/Homebrew/homebrew/blob/master/share/doc/homebrew/Homebrew-and-Python.md>
       import os
       import sys
 
@@ -278,7 +276,7 @@ class Python3 < Formula
       They will install into the site-package directory
         #{site_packages}
 
-      See: https://github.com/Homebrew/homebrew/wiki/Homebrew-and-Python
+      See: https://github.com/Homebrew/homebrew/blob/master/share/doc/homebrew/Homebrew-and-Python.md
     EOS
 
     # Tk warning only for 10.6
@@ -298,6 +296,7 @@ class Python3 < Formula
     system "#{bin}/python#{VER}", "-c", "import sqlite3"
     # Check if some other modules import. Then the linked libs are working.
     system "#{bin}/python#{VER}", "-c", "import tkinter; root = tkinter.Tk()"
+    system bin/"pip3", "list"
   end
 end
 

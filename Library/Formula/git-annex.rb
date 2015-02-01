@@ -5,24 +5,28 @@ class GitAnnex < Formula
   include Language::Haskell::Cabal
 
   homepage "https://git-annex.branchable.com/"
-  url "http://hackage.haskell.org/package/git-annex-5.20140613/git-annex-5.20140613.tar.gz"
-  sha1 "45a889114f4687553abffb48b0603c863e1ce816"
+  url "https://hackage.haskell.org/package/git-annex-5.20150113/git-annex-5.20150113.tar.gz"
+  sha1 "b45b285ef4b75ffd4fd0fa7d9795c507e8edbcfb"
 
   bottle do
     cellar :any
-    sha1 "ccab493c68dcde317c08568d1b2974f6c20a33b4" => :mavericks
-    sha1 "26a68c960872dc2c81947cc4627a5b83d7f787ee" => :mountain_lion
-    sha1 "fcd4afb79ae66269577de915f1f9f531b805d3d8" => :lion
+    sha1 "275263122dd03a9a7e3a55c2787879c8b79186ff" => :yosemite
+    sha1 "60fd29fafdcb8043336be2080bf974b0b376b945" => :mavericks
+    sha1 "82da5ad86e926f382e7817a609b05f8a76be6bcd" => :mountain_lion
   end
 
   depends_on "gcc" => :build
   depends_on "ghc" => :build
   depends_on "cabal-install" => :build
   depends_on "pkg-config" => :build
+  # wget is workaround for http://git-annex.branchable.com/bugs/Build_fails_when_no_wget_avalible/
+  depends_on "wget" => :build
   depends_on "gsasl"
   depends_on "libidn"
   depends_on "gnutls"
   depends_on "gmp"
+
+  fails_with(:clang) { build 425 } # clang segfaults on Lion
 
   def install
     cabal_sandbox do
@@ -40,24 +44,7 @@ class GitAnnex < Formula
 
   test do
     # make sure git can find git-annex
-    ENV.prepend_path 'PATH', bin
-    # create a first git repository with an annex
-    mkdir "my_annex" do
-      system "git", "init"
-      system "git", "annex", "init", "my_annex"
-      cp bin/"git-annex", "bigfile"
-      system "git", "annex", "add", "bigfile"
-      system "git", "commit", "-am", "big file added"
-      assert File.symlink? "bigfile"
-    end
-    # and propagate its content to another
-    system "git", "clone", "my_annex", "my_annex_clone"
-    Dir.chdir "my_annex_clone" do
-      assert !File.file?("bigfile")
-      system "git", "annex", "get", "bigfile"
-      assert File.file? "bigfile"
-    end
-    # make test files writable so homebrew can drop them
-    chmod_R 0777, testpath
+    ENV.prepend_path "PATH", bin
+    system "git", "annex", "test"
   end
 end

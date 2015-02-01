@@ -2,8 +2,8 @@ require "formula"
 
 class Nodebrew < Formula
   homepage "https://github.com/hokaccha/nodebrew"
-  url "https://github.com/hokaccha/nodebrew/archive/v0.7.4.tar.gz"
-  sha1 "b60f9048837a15eef2420e9ffbced6d57b753534"
+  url "https://github.com/hokaccha/nodebrew/archive/v0.8.0.tar.gz"
+  sha1 "5f3ec97e267fbccffcd3732a0a2436daa3a09d48"
   head "https://github.com/hokaccha/nodebrew.git"
 
   def install
@@ -23,9 +23,6 @@ class Nodebrew < Formula
   end
 
   test do
-    IO.popen("nodebrew ls-remote") do |pipe|
-      assert pipe.read.include?("v0.10.0")
-    end
+    assert shell_output("#{bin}/nodebrew ls-remote").include?("v0.10.0")
   end
-
 end

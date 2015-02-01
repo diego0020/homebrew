@@ -1,28 +1,22 @@
 require 'formula'
 
 class Arangodb < Formula
-  homepage 'http://www.arangodb.org/'
-  url 'https://www.arangodb.org/repositories/Source/ArangoDB-2.2.0.tar.gz'
-  sha1 '6c1886c606f73f9d3dfbc3d58293cc4f47a07491'
+  homepage 'http://www.arangodb.com/'
+  url 'https://www.arangodb.com/repositories/Source/ArangoDB-2.4.2.tar.gz'
+  sha1 '5e396cfcd0376cbcf2f7feac36270676f1b9e991'
 
-  head "https://github.com/triAGENS/ArangoDB.git", :branch => 'unstable'
+  head "https://github.com/arangodb/arangodb.git", :branch => 'unstable'
 
   bottle do
-    sha1 "a15dc58115659a88b0c94e2c895f92706f6f9b29" => :mavericks
-    sha1 "bbc6fad4e7bd32fe659c9261a7d7fd11286b3c29" => :mountain_lion
+    sha1 "e15c42bdac98b7430d3d895b650437353cdb0659" => :yosemite
+    sha1 "0b2a59822ae08af9ebd5dadde4037b2b342d0c92" => :mavericks
+    sha1 "b43016b809802a6be2d26be8c61b8d574bc2d827" => :mountain_lion
   end
 
   depends_on 'go' => :build
+  depends_on 'openssl'
 
   needs :cxx11
-
-  def suffix
-    if build.stable?
-      return ""
-    else
-      return "-" + (build.devel? ? version : "unstable")
-    end
-  end
 
   def install
     # clang on 10.8 will still try to build against libstdc++,
@@ -30,25 +24,16 @@ class Arangodb < Formula
     # arangodb requires.
     ENV.libcxx
 
-    # Bundled V8 tries to build with a 10.5 deployment target,
-    # which causes clang to error out b/c a 10.5 deployment target
-    # and -stdlib=libc++ are not valid together.
-    inreplace "3rdParty/V8/build/standalone.gypi",
-      "'mac_deployment_target%': '10.5',",
-      "'mac_deployment_target%': '#{MacOS.version}',"
-
     args = %W[
       --disable-dependency-tracking
       --prefix=#{prefix}
       --disable-relative
-      --enable-all-in-one-icu
-      --enable-all-in-one-libev
-      --enable-all-in-one-v8
       --enable-mruby
       --datadir=#{share}
       --localstatedir=#{var}
-      --program-suffix=#{suffix}
     ]
+
+    args << "--program-suffix=unstable" if build.head?
 
     system "./configure", *args
     system "make install"

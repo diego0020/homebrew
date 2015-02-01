@@ -5,14 +5,14 @@ require "formula"
 # https://pypi.python.org/pypi/youtube_dl
 class YoutubeDl < Formula
   homepage "http://rg3.github.io/youtube-dl/"
-  url "https://yt-dl.org/downloads/2014.07.25.1/youtube-dl-2014.07.25.1.tar.gz"
-  sha1 "3549e82054512557ebb126df8f92e0af25e1fa3c"
+  url "https://yt-dl.org/downloads/2015.01.30.2/youtube-dl-2015.01.30.2.tar.gz"
+  sha256 "95268ab14425c5ab1d13b338400d9611f0b06d64812c7ed44c2c3e4c8ae8d503"
 
   bottle do
     cellar :any
-    sha1 "9eeea615bf871478fb742cf859133235390ae403" => :mavericks
-    sha1 "e67edd755aafebf2e437a5084fa70baa0f952970" => :mountain_lion
-    sha1 "bbe784b1400b28078364a8167929b17e94dd8891" => :lion
+    sha1 "1bb153e8937b9db3f522e77dabd901c06d7d99b3" => :yosemite
+    sha1 "9d3d303a025263ff254ab5d04e8f313b8cde0068" => :mavericks
+    sha1 "369dafec6524c79744e8e72e1c5fd00d8eb30b02" => :mountain_lion
   end
 
   head do
@@ -23,16 +23,15 @@ class YoutubeDl < Formula
   depends_on "rtmpdump" => :optional
 
   def install
-    # Remove the legacy executable from the git repo
-    rm "youtube-dl" if build.head?
     system "make", "PREFIX=#{prefix}"
     bin.install "youtube-dl"
     man1.install "youtube-dl.1"
     bash_completion.install "youtube-dl.bash-completion"
+    zsh_completion.install "youtube-dl.zsh" => "_youtube-dl"
   end
 
   def caveats
-    "To use post-processing options, `brew install ffmpeg`."
+    "To use post-processing options, `brew install ffmpeg` or `brew install libav`."
   end
 
   test do
